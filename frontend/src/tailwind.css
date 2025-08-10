@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* your custom CSS can go below */
+body{
+  @apply bg-gray-700;
+}

@@ -1,14 +1,24 @@
-export default function Input() {
+import {useState} from "react";
 
-	return (
-		<input
-			id="csv"
-			type="file"
-			className={
-				"w-full rounded-md bg-gray-400 text-gray-100 placeholder-gray-300 " +
-				"border border-gray-600 focus:border-cyan-400 outline-none " +
-				"px-3 py-2 shadow-sm border-dashed"
-			}
-		/>
-	);
+export default function Input(props) {
+  const [fileName, setFileName] = useState("");
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setFileName(file.name);
+      props.onChange(event);
+    }
+  };
+
+  return (
+      <label className="w-full cursor-pointer bg-gray-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg">
+        {fileName || "Upload File"}
+        <input
+          type="file"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </label>
+  );
 }

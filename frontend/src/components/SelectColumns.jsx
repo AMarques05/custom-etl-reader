@@ -21,7 +21,7 @@ function SelectColumns(props) {
     }
 
     return (
-        <div className="bg-gray-400 p-6 rounded shadow-xl max-h-[200px] flex gap-4">
+        <div className="bg-gray-400 py-2 px-4 rounded shadow-xl max-h-[200px] flex gap-4">
             <h2 className="text-xl font-semibold mb-4">Select Columns: </h2>
             {/* Column selection functionality will go here */}
                 {columns.map((column, index) => (

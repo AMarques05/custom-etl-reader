@@ -22,12 +22,6 @@ The Custom ETL Reader is a comprehensive web-based Extract, Transform, Load (ETL
 - Offers real-time data preview with customizable viewing options (5-100 rows per page)
 - Includes intelligent column detection and display optimization
 
-**Advanced User Experience Features**
-- **Dark Mode Support**: Complete theming system with light/dark mode toggle for enhanced user comfort
-- **Responsive Design**: Vertical scrolling layout optimized for various screen sizes and data volumes
-- **Real-time Feedback**: Instant visual feedback during file upload and processing operations
-- **Progressive Enhancement**: Graceful handling of no-data states with informative user guidance
-
 ### Technical Architecture
 
 **Backend Processing System**
@@ -69,25 +63,6 @@ The application is designed as an extensible platform for advanced ETL operation
 - **Export Capabilities**: Prepared for multiple output format support (JSON, XML, processed CSV)
 - **Batch Processing**: Architecture supports future implementation of bulk file processing
 - **Custom Transformations**: Plugin-ready system for implementing custom data transformation rules
-
----
-
-## Technical Innovation
-
-### Modern Web Architecture
-- **Microservices Approach**: Separation of concerns with dedicated frontend and backend services
-- **RESTful API Design**: Clean, documented API endpoints for seamless data exchange
-- **Cross-Origin Resource Sharing**: Configured for secure frontend-backend communication
-
-### Performance Optimization
-- **Efficient Data Streaming**: Optimized for handling large files without memory overflow
-- **Lazy Loading**: Progressive data loading for improved user experience
-- **Component Optimization**: React components designed for minimal re-rendering and optimal performance
-
-### User-Centric Design
-- **Accessibility**: WCAG-compliant design with proper contrast ratios and keyboard navigation
-- **Intuitive Workflow**: Logical progression from file upload through data analysis
-- **Visual Feedback**: Clear status indicators and progress feedback throughout the ETL process
 
 ---
 

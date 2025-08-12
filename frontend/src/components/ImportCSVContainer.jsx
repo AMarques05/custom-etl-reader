@@ -33,9 +33,9 @@ function ImportCSVContainer(props) {
   }
 
   return(
-    <div className="flex flex-col justify-center items-center gap-4 col-span-3 row-span-2 bg-gray-400 p-4 rounded shadow-xl/50">
+    <div className="flex flex-col justify-center items-center gap-4 bg-gray-400 p-6 rounded shadow-xl">
       <Input onChange={handleFileChange} />
-      <Button onClick={uploadCSV} />
+      <Button onClick={uploadCSV} text="Upload CSV"/>
     </div>
    );
 }

@@ -11,6 +11,16 @@ function Options(props) {
         <div className="bg-gray-400 p-6 rounded shadow-xl min-h-[200px]">
             <h2 className="text-xl font-semibold mb-4">Processing Options</h2>
             {/* Options functionality will go here */}
+            <div className="">
+                <p>1</p>
+                <p>2</p>
+                <p>3</p>
+                <p>4</p>
+                <p>5</p>
+                <p>6</p>
+                <p>7</p>
+                <p>8</p>
+            </div>
         </div>
     );
 }

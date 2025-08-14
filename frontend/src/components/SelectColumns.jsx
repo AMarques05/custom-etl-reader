@@ -33,6 +33,7 @@ function SelectColumns(props) {
                                 : [...selectedColumns, column];
                             setSelectedColumns(newSelectedColumns);
                             console.log("Selected columns:", newSelectedColumns);
+                            props.onColumnsChange(newSelectedColumns);
                         }}
                         className={`px-3 py-1 rounded-full ${selectedColumns.includes(column) ? 'bg-blue-500 text-white' : 'bg-gray-300'} hover:bg-blue-300 hover:scale-105 transition-transform duration-200`}
                     >

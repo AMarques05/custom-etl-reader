@@ -19,19 +19,23 @@ function Options(props) {
 
     // Handle individual option selection
     function handleOptionToggle(optionId) {
-        setOptions(prevOptions =>
-            prevOptions.map(option =>
-                option.id === optionId ? { ...option, selected: !option.selected } : option
-            )
+        const updatedOptions = options.map(option =>
+            option.id === optionId ? { ...option, selected: !option.selected } : option
         );
+        setOptions(updatedOptions);
+
+        const selectedOptionIds = updatedOptions.filter(option => option.selected).map(option => option.id);
+        props.onOptionsChange(selectedOptionIds);
     }
 
     // Handle select all/deselect all
     function handleSelectAll() {
         const allSelected = options.every(option => option.selected);
-        setOptions(prevOptions =>
-            prevOptions.map(option => ({ ...option, selected: !allSelected }))
-        );
+        const updatedOptions = options.map(option => ({ ...option, selected: !allSelected }));
+        setOptions(updatedOptions);
+
+        const selectedOptionIds = updatedOptions.filter(option => option.selected).map(option => option.id);
+        props.onOptionsChange(selectedOptionIds);
     }
 
     const allSelected = options.every(option => option.selected);

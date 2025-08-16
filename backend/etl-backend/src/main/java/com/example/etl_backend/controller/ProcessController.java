@@ -10,43 +10,42 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.etl_backend.service.CleanService;
+import com.example.etl_backend.service.FilterService;
+
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/process")
 @CrossOrigin(origins = "http://localhost:3000") // Adjust for your frontend port
 public class ProcessController {
 
-    @PostMapping("/process")
-    public ResponseEntity<?> processData(@RequestBody ProcessRequestDto request) {
+    private final CleanService cleanService;
+    private final FilterService filterService;
+
+    public ProcessController(CleanService cleanService, FilterService filterService) {
+        this.cleanService = cleanService;
+        this.filterService = filterService;
+    }
+
+    //PostMapping for cleaning the data
+    @PostMapping("/clean")
+    public ResponseEntity<?> cleanData(@RequestBody ProcessRequestDto request) {
         try {
-            // Your processing logic here
-            // Process request.getCsvData(), request.getSelectedColumns(), etc.
-            List<Map<String, Object>> csvData = request.getCsvData();
-            List<String> selectedColumns = request.getSelectedColumns();
-            List<String> selectedOptions = request.getSelectedOptions();
-            List<FilterDto> filters = request.getFilters();
-
-            // Print out all the "request" variables
-            System.out.println("CSV Data: " + csvData);
-            System.out.println("Selected Columns: " + selectedColumns);
-            System.out.println("Selected Options: " + selectedOptions);
-            
-            System.out.println("Applied Filters:");
-            if (filters != null && !filters.isEmpty()) {
-                for (int i = 0; i < filters.size(); i++) {
-                    FilterDto filter = filters.get(i);
-                    System.out.println("  Filter " + (i + 1) + ": Column='" + filter.getColumn() + 
-                                     "', Operator='" + filter.getOperator() + 
-                                     "', Value='" + filter.getValue() + "'");
-                }
-            } else {
-                System.out.println("  No filters applied");
-            }
-
-            String processedData = "Processed data"; // Replace with actual processing result
-
-            return ResponseEntity.ok(processedData);
+            String result = cleanService.cleanData(request.getCsvData(), request.getSelectedOptions());
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error processing data: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Error cleaning data: " + e.getMessage());
         }
     }
+
+    //PostMapping for filtering the data
+    @PostMapping("/filter")
+    public ResponseEntity<?> filterData(@RequestBody ProcessRequestDto request) {
+        try {
+            String result = filterService.filterData(request.getCsvData(), request.getSelectedColumns(), request.getFilters());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error filtering data: " + e.getMessage());
+        }
+    }
+
 }

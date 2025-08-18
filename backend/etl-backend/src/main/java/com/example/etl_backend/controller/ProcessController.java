@@ -30,7 +30,7 @@ public class ProcessController {
     @PostMapping("/clean")
     public ResponseEntity<?> cleanData(@RequestBody ProcessRequestDto request) {
         try {
-            String result = cleanService.cleanData(request.getCsvData(), request.getSelectedOptions());
+            List<Map<String, Object>> result = cleanService.cleanData(request.getCsvData(), request.getSelectedOptions());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error cleaning data: " + e.getMessage());
@@ -41,7 +41,7 @@ public class ProcessController {
     @PostMapping("/filter")
     public ResponseEntity<?> filterData(@RequestBody ProcessRequestDto request) {
         try {
-            String result = filterService.filterData(request.getCsvData(), request.getSelectedColumns(), request.getFilters());
+            List<Map<String, Object>> result = filterService.filterData(request.getCsvData(), request.getSelectedColumns(), request.getFilters());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error filtering data: " + e.getMessage());

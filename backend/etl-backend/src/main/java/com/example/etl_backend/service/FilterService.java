@@ -22,7 +22,38 @@ public class FilterService {
             return List.of();
         }
 
-        return csvData;
+        List<Map<String, Object>> filteredData = new ArrayList<>(csvData);
+
+        // Filter data based on the filter options
+        for(FilterDto filter : filters) {
+            String column = filter.getColumn();
+            String value = filter.getValue();
+            String operator = filter.getOperator();
+
+            filteredData = applyFilter(filteredData, column, value, operator);
+        }
+
+
+        // Filter data based off of the columns
+        filteredData = filteredData.stream()
+            .map(row -> selectedColumns.stream()
+                .filter(row::containsKey)
+                .collect(Collectors.toMap(
+                    column -> column,
+                    row::get
+                )))
+            .collect(Collectors.toList());
+
+        return filteredData;
     }
-    
+
+    private List<Map<String, Object>> applyFilter(List<Map<String, Object>> data, String column, String value, String operator) {
+
+
+
+
+        return data;
+    }
+
 }
+

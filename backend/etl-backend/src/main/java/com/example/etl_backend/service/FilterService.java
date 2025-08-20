@@ -70,6 +70,12 @@ public class FilterService {
             case "less_than":
                 data = lessThan(data, column, value);
                 break;
+            case "greater_than_equals":
+                data = greaterThanEquals(data, column, value);
+                break;
+            case "less_than_equals":
+                data = lessThanEquals(data, column, value);
+                break;
             default:
                 System.out.println("Invalid Filter operator.");
         }
@@ -107,12 +113,77 @@ public class FilterService {
     }
 
     public List<Map<String, Object>> greaterThan(List<Map<String, Object>> data, String column, String value) {
-        return data;
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+
+                if(cellValue == null) return false;
+                try{
+                    double cellNum = Double.parseDouble(cellValue.toString());
+                    double valueNum = Double.parseDouble(value);
+                    return cellNum > valueNum;
+                }catch(NumberFormatException e){
+                    System.out.println("Non-numeric comparison attempted.");
+                    return false;
+                }
+            })
+            .collect(Collectors.toList());
     }
 
     public List<Map<String, Object>> lessThan(List<Map<String, Object>> data, String column, String value) {
-        return data;
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+
+                if(cellValue == null) return false;
+                try{
+                    double cellNum = Double.parseDouble(cellValue.toString());
+                    double valueNum = Double.parseDouble(value);
+                    return cellNum < valueNum;
+                }catch(NumberFormatException e){
+                    System.out.println("Non-numeric comparison attempted.");
+                    return false;
+                }
+            })
+            .collect(Collectors.toList());
     }
+
+    public List<Map<String, Object>> lessThanEquals(List<Map<String, Object>> data, String column, String value) {
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+
+                if(cellValue == null) return false;
+                try{
+                    double cellNum = Double.parseDouble(cellValue.toString());
+                    double valueNum = Double.parseDouble(value);
+                    return cellNum <= valueNum;
+                }catch(NumberFormatException e){
+                    System.out.println("Non-numeric comparison attempted.");
+                    return false;
+                }
+            })
+            .collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> greaterThanEquals(List<Map<String, Object>> data, String column, String value) {
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+
+                if(cellValue == null) return false;
+                try{
+                    double cellNum = Double.parseDouble(cellValue.toString());
+                    double valueNum = Double.parseDouble(value);
+                    return cellNum >= valueNum;
+                }catch(NumberFormatException e){
+                    System.out.println("Non-numeric comparison attempted.");
+                    return false;
+                }
+            })
+            .collect(Collectors.toList());
+    }
+
 
 }
 

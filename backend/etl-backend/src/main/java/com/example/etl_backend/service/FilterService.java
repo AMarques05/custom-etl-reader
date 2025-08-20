@@ -97,17 +97,20 @@ public class FilterService {
     }
 
     public List<Map<String, Object>> contains(List<Map<String, Object>> data, String column, String value) {
-        
-        return data;
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+                return cellValue != null && cellValue.toString()
+                    .contains(value.toLowerCase());
+            })
+            .collect(Collectors.toList());
     }
 
     public List<Map<String, Object>> greaterThan(List<Map<String, Object>> data, String column, String value) {
-        
         return data;
     }
 
     public List<Map<String, Object>> lessThan(List<Map<String, Object>> data, String column, String value) {
-        
         return data;
     }
 

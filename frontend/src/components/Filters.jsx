@@ -65,6 +65,7 @@ function Filters(props) {
                         <option value="not_equals">Not Equals</option>
                         <option value="greater_than">Greater Than</option>
                         <option value="less_than">Less Than</option>
+                        <option value="contains">Contains</option>
                     </select>
 
                     <input

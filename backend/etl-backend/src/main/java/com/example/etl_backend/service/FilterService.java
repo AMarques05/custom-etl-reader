@@ -25,6 +25,11 @@ public class FilterService {
 
         // Filter data based on the filter options
         for(FilterDto filter : filters) {
+            if (filter.getColumn() == null || filter.getValue() == null || filter.getOperator() == null) {
+                System.out.println("Skipping invalid filter: " + filter);
+                continue;
+            }
+            
             String column = filter.getColumn();
             String value = filter.getValue();
             String operator = filter.getOperator();
@@ -48,9 +53,61 @@ public class FilterService {
 
     private List<Map<String, Object>> applyFilter(List<Map<String, Object>> data, String column, String value, String operator) {
 
+        //Method to check which operator was used then perform filtering based off the operator used
+        switch(operator.toLowerCase()){
+            case "equals":
+                data = equals(data, column, value);
+                break;
+            case "not_equals":
+                data = notEquals(data, column, value);
+                break;
+            case "contains":
+                data = contains(data, column, value);
+                break;
+            case "greater_than":
+                data = greaterThan(data, column, value);
+                break;
+            case "less_than":
+                data = lessThan(data, column, value);
+                break;
+            default:
+                System.out.println("Invalid Filter operator.");
+        }
+        return data;
+    }
 
 
+    //Methods for each filtering operator
+    public List<Map<String, Object>> equals(List<Map<String, Object>> data, String column, String value) {
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+                return cellValue != null && cellValue.toString().equals(value);
+            })
+            .collect(Collectors.toList());
+    }
 
+    public List<Map<String, Object>> notEquals(List<Map<String, Object>> data, String column, String value) {
+        return data.stream()
+            .filter(row -> {
+                Object cellValue = row.get(column);
+                return cellValue == null || !cellValue.toString().equals(value);
+            })
+            .collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> contains(List<Map<String, Object>> data, String column, String value) {
+        
+        return data;
+    }
+
+    public List<Map<String, Object>> greaterThan(List<Map<String, Object>> data, String column, String value) {
+        
+        return data;
+    }
+
+    public List<Map<String, Object>> lessThan(List<Map<String, Object>> data, String column, String value) {
+        
         return data;
     }
 

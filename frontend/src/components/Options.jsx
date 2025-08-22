@@ -3,12 +3,12 @@ import { useState } from 'react';
 
 function Options(props) {
     const [options, setOptions] = useState([
-        { id: "remove-duplicates", title: "Remove Duplicates", description: "Remove duplicate rows from the dataset.", selected: false },
-        { id: "fill-missing-values", title: "Fill Missing Values", description: "Fill missing values using various strategies.", selected: false },
-        { id: "remove-empty-rows", title: "Remove Empty Rows", description: "Remove rows that are completely empty.", selected: false },
-        { id: "trim-whitespace", title: "Trim Whitespace", description: "Trim whitespace from the beginning and end of strings.", selected: false },
-        { id: "normalize-text", title: "Normalize Text", description: "Normalize text by converting to lowercase and removing special characters.", selected: false },
-        { id: "fix-date-format", title: "Fix Date Format", description: "Fix date format inconsistencies in the dataset.", selected: false },
+        { id: "remove_duplicates", title: "Remove Duplicates", description: "Remove duplicate rows from the dataset.", selected: false },
+        { id: "remove_null_values", title: "Fill Missing Values", description: "Fill missing values using various strategies.", selected: false },
+        { id: "remove_empty_rows", title: "Remove Empty Rows", description: "Remove rows that are completely empty.", selected: false },
+        { id: "trim_whitespace", title: "Trim Whitespace", description: "Trim whitespace from the beginning and end of strings.", selected: false },
+        { id: "normalize_text", title: "Normalize Text", description: "Normalize text by converting to lowercase and removing special characters.", selected: false },
+        { id: "fix_date_format", title: "Fix Date Format", description: "Fix date format inconsistencies in the dataset.", selected: false },
     ]);
 
     if(props.csvData.length === 0) {

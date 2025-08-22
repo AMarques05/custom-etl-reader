@@ -20,24 +20,45 @@ export default function App() {
       filter.column && filter.operator && filter.value.trim()
     );
 
-    const payload = {
-      csvData: csvData,
-      selectedColumns: selectedColumns,
-      selectedOptions: selectedOptions,
-      filters: validFilters
-    };
+    let processedData = csvData;
 
-    console.log("Sending to backend:", payload);
-    
     try {
-      const response = await fetch('/api/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const result = await response.json();
-      setNewCSV(result);
+      // Step 1: Clean data if options selected
+      if (selectedOptions && selectedOptions.length > 0) {
+        console.log("Cleaning data with options:", selectedOptions);
+        const cleanPayload = {
+          csvData: processedData,
+          selectedOptions: selectedOptions
+        };
+        
+        const cleanResponse = await fetch('/api/process/clean', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(cleanPayload)
+        });
+        processedData = await cleanResponse.json();
+        console.log("Data after cleaning:", processedData);
+      }
 
+      // Step 2: Filter data if filters/columns selected
+      if ((validFilters && validFilters.length > 0) || (selectedColumns && selectedColumns.length > 0)) {
+        console.log("Filtering data with filters:", validFilters, "columns:", selectedColumns);
+        const filterPayload = {
+          csvData: processedData,
+          selectedColumns: selectedColumns,
+          filters: validFilters
+        };
+        
+        const filterResponse = await fetch('/api/process/filter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filterPayload)
+        });
+        processedData = await filterResponse.json();
+        console.log("Data after filtering:", processedData);
+      }
+
+      setNewCSV(processedData);
       setIsSubmitted(true);
     } catch (error) {
       console.error("Error processing data:", error);
@@ -51,7 +72,8 @@ export default function App() {
 
     return (
       <div className="bg-gray-700 min-h-screen py-8 px-4">
-        <DownloadCSV newCSV={csvData} />
+        <DownloadCSV newCSV={newCSV} />
+        {console.log(newCSV)}
       </div>
     );
   }

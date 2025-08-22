@@ -6,6 +6,7 @@ import Options from "./components/Options";
 import Table from "./components/Table";
 import Submit from "./components/Submit";
 import Filters from "./components/Filters";
+import ProcessedDataTable from "./components/ProcessedDataTable";
 
 export default function App() {
   const [newCSV, setNewCSV] = useState([]);
@@ -66,14 +67,11 @@ export default function App() {
   };
 
   if (isSubmitted) {
-    const validFilters = filters.filter(filter => 
-      filter.column && filter.operator && filter.value.trim()
-    );
-
     return (
       <div className="bg-gray-700 min-h-screen py-8 px-4">
-        <DownloadCSV newCSV={newCSV} />
-        {console.log(newCSV)}
+        <div className="flex flex-col gap-6 bg-gray-500 p-6 rounded shadow-lg max-w-6xl mx-auto">
+          <ProcessedDataTable processedData={newCSV} />
+        </div>
       </div>
     );
   }

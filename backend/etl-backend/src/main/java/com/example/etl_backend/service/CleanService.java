@@ -24,6 +24,7 @@ public class CleanService {
 
                 List<Map<String, Object>> cleanData = new ArrayList<>(csvData);
 
+        //Switch case loop to check which cleaning option to perform
         for (String option : selectedOptions) {
             switch (option.toLowerCase()) {
                 case "remove_empty_rows":
@@ -54,6 +55,8 @@ public class CleanService {
         return cleanData;
     }
 
+
+    //Respective cleaning options for each cleaning option
     private List<Map<String, Object>> removeEmptyRows(List<Map<String, Object>> data) {
         System.out.println("Applying: Remove empty rows");
         return data.stream()
@@ -131,20 +134,44 @@ public class CleanService {
     }
 
     private List<Map<String, Object>> removeNullValues(List<Map<String, Object>> data) {
-        System.out.println("Applying: Remove null values");
+        System.out.println("Applying: Replace null values with N/A or None");
         return data.stream()
-                .map(row -> {
-                    Map<String, Object> cleanedRow = new LinkedHashMap<>();
-                    row.forEach((key, value) -> {
-                        if (value != null && !value.toString().trim().isEmpty() && 
-                            !value.toString().equalsIgnoreCase("null")) {
-                            cleanedRow.put(key, value);
+            .map(row -> {
+                Map<String, Object> cleanedRow = new LinkedHashMap<>();
+                row.forEach((key, value) -> {
+                    if (value == null || value.toString().trim().isEmpty() || 
+                        value.toString().equalsIgnoreCase("null")) {
+                        
+                            //If number put None if a word/string put N/A
+                        if (isNumericColumn(data, key)) {
+                            cleanedRow.put(key, "None");
+                        } else {
+                            cleanedRow.put(key, "N/A");
                         }
-                    });
-                    return cleanedRow;
-                })
-                .filter(row -> !row.isEmpty()) // Remove rows that become empty after null removal
-                .collect(Collectors.toList());
+                    } else {
+                        cleanedRow.put(key, value);
+                    }
+                });
+                return cleanedRow;
+            })
+            .collect(Collectors.toList());
+    }
+
+    private boolean isNumericColumn(List<Map<String, Object>> data, String columnName) {
+    // Sample a few non-null values to determine if column is numeric
+    return data.stream()
+            .limit(10) // Check first 10 rows for performance
+            .map(row -> row.get(columnName))
+            .filter(value -> value != null && !value.toString().trim().isEmpty() && 
+                           !value.toString().equalsIgnoreCase("null"))
+            .anyMatch(value -> {
+                try {
+                    Double.parseDouble(value.toString().trim());
+                    return true;
+                } catch (NumberFormatException e) {
+                    return false;
+                }
+            });
     }
 
 

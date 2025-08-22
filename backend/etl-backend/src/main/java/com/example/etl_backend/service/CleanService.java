@@ -45,6 +45,9 @@ public class CleanService {
                 case "remove_null_values":
                     cleanData = removeNullValues(cleanData);
                     break;
+                case "fix_date_format":
+                    cleanData = fixDateFormat(cleanData);
+                    break;
                 default:
                     System.out.println("Unknown cleaning option: " + option);
             }
@@ -60,9 +63,15 @@ public class CleanService {
     private List<Map<String, Object>> removeEmptyRows(List<Map<String, Object>> data) {
         System.out.println("Applying: Remove empty rows");
         return data.stream()
-                .filter(row -> row != null && !row.isEmpty() && 
-                        row.values().stream().anyMatch(value -> 
-                                value != null && !value.toString().trim().isEmpty()))
+                .filter(row -> {
+                    if (row == null || row.isEmpty()) {
+                        return false; // Remove completely empty rows
+                    }
+                    
+                    // Remove rows that have ANY empty/null values
+                    return row.values().stream().allMatch(value -> 
+                            value != null && !value.toString().trim().isEmpty());
+                })
                 .collect(Collectors.toList());
     }
 
@@ -172,6 +181,56 @@ public class CleanService {
                     return false;
                 }
             });
+    }
+
+    private List<Map<String, Object>> fixDateFormat(List<Map<String, Object>> data) {
+        System.out.println("Applying: Fix date format");
+        return data.stream()
+                .map(row -> {
+                    Map<String, Object> cleanedRow = new LinkedHashMap<>();
+                    row.forEach((key, value) -> {
+                        if (value instanceof String) {
+                            String dateValue = (String) value;
+                            // Try to standardize common date formats to YYYY-MM-DD
+                            String fixedDate = standardizeDateFormat(dateValue);
+                            cleanedRow.put(key, fixedDate);
+                        } else {
+                            cleanedRow.put(key, value);
+                        }
+                    });
+                    return cleanedRow;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private String standardizeDateFormat(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) {
+            return dateStr;
+        }
+        
+        String trimmed = dateStr.trim();
+        
+        // Common date patterns to standardize
+        // MM/DD/YYYY or MM-DD-YYYY -> YYYY-MM-DD
+        if (trimmed.matches("\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}")) {
+            String[] parts = trimmed.split("[/-]");
+            return String.format("%s-%02d-%02d", parts[2], Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        }
+        
+        // DD/MM/YYYY or DD-MM-YYYY -> YYYY-MM-DD (European format)
+        if (trimmed.matches("\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}") && trimmed.contains(".")) {
+            String[] parts = trimmed.split("[/.-]");
+            return String.format("%s-%02d-%02d", parts[2], Integer.parseInt(parts[1]), Integer.parseInt(parts[0]));
+        }
+        
+        // YYYY/MM/DD or YYYY-MM-DD -> keep as YYYY-MM-DD
+        if (trimmed.matches("\\d{4}[/-]\\d{1,2}[/-]\\d{1,2}")) {
+            String[] parts = trimmed.split("[/-]");
+            return String.format("%s-%02d-%02d", parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+        }
+        
+        // If no pattern matches, return original
+        return dateStr;
     }
 
 

@@ -5,10 +5,11 @@ function Options(props) {
     const [options, setOptions] = useState([
         { id: "remove_duplicates", title: "Remove Duplicates", description: "Remove duplicate rows from the dataset.", selected: false },
         { id: "remove_null_values", title: "Fill Missing Values", description: "Fill missing values using various strategies.", selected: false },
-        { id: "remove_empty_rows", title: "Remove Empty Rows", description: "Remove rows that are completely empty.", selected: false },
+        { id: "remove_empty_rows", title: "Remove Empty Rows/Values", description: "Remove rows that are completely empty or contains empty values.", selected: false },
         { id: "trim_whitespace", title: "Trim Whitespace", description: "Trim whitespace from the beginning and end of strings.", selected: false },
-        { id: "normalize_text", title: "Normalize Text", description: "Normalize text by converting to lowercase and removing special characters.", selected: false },
-        { id: "fix_date_format", title: "Fix Date Format", description: "Fix date format inconsistencies in the dataset.", selected: false },
+        { id: "standardize_case", title: "Normalize Text", description: "Convert all text to lowercase and trim whitespace.", selected: false },
+        { id: "remove_special_characters", title: "Remove Special Characters", description: "Remove special characters except letters, numbers, spaces, and basic punctuation.", selected: false },
+        { id: "fix_date_format", title: "Fix Date Format", description: "Standardize date formats to YYYY-MM-DD format.", selected: false },
     ]);
 
     if(props.csvData.length === 0) {

@@ -18,6 +18,18 @@ import java.util.regex.Matcher;
 @Service
 public class CleanService {
 
+    // Define placeholder values that should be preserved
+    private static final Set<String> PLACEHOLDER_VALUES = Set.of("N/A", "None", "NULL", "null");
+
+    // Helper method to check if a value is a placeholder
+    private boolean isPlaceholderValue(Object value) {
+        if (value == null) return false;
+        String strValue = value.toString();
+        return PLACEHOLDER_VALUES.contains(strValue) || 
+               PLACEHOLDER_VALUES.contains(strValue.toUpperCase()) ||
+               PLACEHOLDER_VALUES.contains(strValue.toLowerCase());
+    }
+
     public List<Map<String, Object>> cleanData(List<Map<String, Object>> csvData, List<String> selectedOptions) {
         
         System.out.println("Cleaning started");
@@ -74,9 +86,9 @@ public class CleanService {
                         return false; // Remove completely empty rows
                     }
                     
-                    // Remove rows that have ANY empty/null values
+                    // Remove rows that have ANY empty/null values (but keep placeholder values)
                     return row.values().stream().allMatch(value -> 
-                            value != null && !value.toString().trim().isEmpty());
+                            value != null && !value.toString().trim().isEmpty() || isPlaceholderValue(value));
                 })
                 .collect(Collectors.toList());
     }
@@ -87,7 +99,7 @@ public class CleanService {
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
-                        if (value instanceof String) {
+                        if (value instanceof String && !isPlaceholderValue(value)) {
                             cleanedRow.put(key, ((String) value).trim());
                         } else {
                             cleanedRow.put(key, value);
@@ -105,9 +117,13 @@ public class CleanService {
                 .filter(row -> {
                     String rowSignature = row.entrySet().stream()
                             .map(entry -> {
-                                String normalizedValue = entry.getValue() != null ? 
-                                        entry.getValue().toString().trim().toLowerCase() : "";
-                                return entry.getKey() + ":" + normalizedValue;
+                                if (isPlaceholderValue(entry.getValue())) {
+                                    return entry.getKey() + ":" + entry.getValue().toString(); // Keep placeholder as-is
+                                } else {
+                                    String normalizedValue = entry.getValue() != null ? 
+                                            entry.getValue().toString().trim().toLowerCase() : "";
+                                    return entry.getKey() + ":" + normalizedValue;
+                                }
                             })
                             .sorted()
                             .collect(Collectors.joining("|"));
@@ -123,10 +139,10 @@ public class CleanService {
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
-                        if (value instanceof String && !(value.equals("N/A") || value.equals("None"))) {
+                        if (value instanceof String && !isPlaceholderValue(value)) {
                             cleanedRow.put(key, ((String) value).toLowerCase().trim());
                         } else {
-                            cleanedRow.put(key, value);
+                            cleanedRow.put(key, value); // Preserve placeholder values
                         }
                     });
                     return cleanedRow;
@@ -140,11 +156,11 @@ public class CleanService {
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
-                        if (value instanceof String && !(value.equals("N/A") || value.equals("None"))) {
+                        if (value instanceof String && !isPlaceholderValue(value)) {
                             String cleaned = ((String) value).replaceAll("[^a-zA-Z0-9\\s.,'-]", "").trim();
                             cleanedRow.put(key, cleaned);
                         } else {
-                            cleanedRow.put(key, value);
+                            cleanedRow.put(key, value); // Preserve placeholder values
                         }
                     });
                     return cleanedRow;
@@ -182,7 +198,7 @@ public class CleanService {
             .limit(10) // Check first 10 rows for performance
             .map(row -> row.get(columnName))
             .filter(value -> value != null && !value.toString().trim().isEmpty() && 
-                           !value.toString().equalsIgnoreCase("null"))
+                           !value.toString().equalsIgnoreCase("null") && !isPlaceholderValue(value))
             .anyMatch(value -> {
                 try {
                     Double.parseDouble(value.toString().trim());
@@ -205,7 +221,7 @@ public class CleanService {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
                         if (value instanceof String && dateColumns.contains(key) && 
-                            !(value.equals("N/A") || value.equals("None") || value.toString().trim().isEmpty())) {
+                            !isPlaceholderValue(value) && !value.toString().trim().isEmpty()) {
                             String dateValue = (String) value;
                             String fixedDate = standardizeDateFormat(dateValue);
                             cleanedRow.put(key, fixedDate);
@@ -236,7 +252,7 @@ public class CleanService {
                     .limit(20) // Sample first 20 rows
                     .map(row -> row.get(columnName))
                     .filter(value -> value != null && !value.toString().trim().isEmpty() &&
-                                   !value.toString().equals("N/A") && !value.toString().equals("None"))
+                                   !isPlaceholderValue(value))
                     .filter(value -> looksLikeDate(value.toString()))
                     .count();
             

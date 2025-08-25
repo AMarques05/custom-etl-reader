@@ -8,6 +8,12 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.stream.Collectors;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 @Service
 public class CleanService {
@@ -94,15 +100,19 @@ public class CleanService {
 
     private List<Map<String, Object>> removeDuplicates(List<Map<String, Object>> data) {
         System.out.println("Applying: Remove duplicates");
-        Set<Map<String, Object>> seen = new HashSet<>();
+        Set<String> seen = new HashSet<>();
         return data.stream()
                 .filter(row -> {
-                    Map<String, Object> normalizedRow = new LinkedHashMap<>();
-                    row.forEach((key, value) -> {
-                        String normalizedValue = value != null ? value.toString().trim().toLowerCase() : "";
-                        normalizedRow.put(key, normalizedValue);
-                    });
-                    return seen.add(normalizedRow);
+                    String rowSignature = row.entrySet().stream()
+                            .map(entry -> {
+                                String normalizedValue = entry.getValue() != null ? 
+                                        entry.getValue().toString().trim().toLowerCase() : "";
+                                return entry.getKey() + ":" + normalizedValue;
+                            })
+                            .sorted()
+                            .collect(Collectors.joining("|"));
+                    
+                    return seen.add(rowSignature);
                 })
                 .collect(Collectors.toList());
     }
@@ -113,7 +123,7 @@ public class CleanService {
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
-                        if (value instanceof String) {
+                        if (value instanceof String && !(value.equals("N/A") || value.equals("None"))) {
                             cleanedRow.put(key, ((String) value).toLowerCase().trim());
                         } else {
                             cleanedRow.put(key, value);
@@ -130,7 +140,7 @@ public class CleanService {
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
-                        if (value instanceof String) {
+                        if (value instanceof String && !(value.equals("N/A") || value.equals("None"))) {
                             String cleaned = ((String) value).replaceAll("[^a-zA-Z0-9\\s.,'-]", "").trim();
                             cleanedRow.put(key, cleaned);
                         } else {
@@ -185,13 +195,18 @@ public class CleanService {
 
     private List<Map<String, Object>> fixDateFormat(List<Map<String, Object>> data) {
         System.out.println("Applying: Fix date format");
+        
+        // First, identify which columns likely contain dates
+        Set<String> dateColumns = identifyDateColumns(data);
+        System.out.println("Detected date columns: " + dateColumns);
+        
         return data.stream()
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
-                        if (value instanceof String) {
+                        if (value instanceof String && dateColumns.contains(key) && 
+                            !(value.equals("N/A") || value.equals("None") || value.toString().trim().isEmpty())) {
                             String dateValue = (String) value;
-                            // Try to standardize common date formats to YYYY-MM-DD
                             String fixedDate = standardizeDateFormat(dateValue);
                             cleanedRow.put(key, fixedDate);
                         } else {
@@ -203,6 +218,70 @@ public class CleanService {
                 .collect(Collectors.toList());
     }
 
+    private Set<String> identifyDateColumns(List<Map<String, Object>> data) {
+        if (data.isEmpty()) return new HashSet<>();
+        
+        Set<String> dateColumns = new HashSet<>();
+        Set<String> allColumns = data.get(0).keySet();
+        
+        for (String columnName : allColumns) {
+            // Check if column name suggests it's a date
+            if (isDateColumnByName(columnName)) {
+                dateColumns.add(columnName);
+                continue;
+            }
+            
+            // Check if the values in this column look like dates
+            long dateCount = data.stream()
+                    .limit(20) // Sample first 20 rows
+                    .map(row -> row.get(columnName))
+                    .filter(value -> value != null && !value.toString().trim().isEmpty() &&
+                                   !value.toString().equals("N/A") && !value.toString().equals("None"))
+                    .filter(value -> looksLikeDate(value.toString()))
+                    .count();
+            
+            // If more than 60% of sampled values look like dates, consider it a date column
+            long sampleSize = Math.min(20, data.size());
+            if (sampleSize > 0 && ((double) dateCount / sampleSize) >= 0.6) {
+                dateColumns.add(columnName);
+            }
+        }
+        
+        return dateColumns;
+    }
+
+    private boolean isDateColumnByName(String columnName) {
+        String lowerName = columnName.toLowerCase();
+        return lowerName.contains("date") || 
+               lowerName.contains("time") || 
+               lowerName.contains("created") || 
+               lowerName.contains("updated") || 
+               lowerName.contains("modified") ||
+               lowerName.contains("birth") ||
+               lowerName.contains("start") ||
+               lowerName.contains("end") ||
+               lowerName.contains("expiry") ||
+               lowerName.contains("due") ||
+               lowerName.endsWith("_at") ||
+               lowerName.endsWith("_on");
+    }
+
+    private boolean looksLikeDate(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return false;
+        }
+        
+        String trimmed = value.trim();
+        
+        // Common date patterns
+        return trimmed.matches("\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4}") ||          // MM/DD/YYYY variants
+               trimmed.matches("\\d{4}[/.-]\\d{1,2}[/.-]\\d{1,2}") ||             // YYYY/MM/DD variants
+               trimmed.matches("\\d{1,2}\\s+[A-Za-z]{3,9}\\s+\\d{2,4}") ||       // DD Month YYYY
+               trimmed.matches("[A-Za-z]{3,9}\\s+\\d{1,2},?\\s+\\d{2,4}") ||     // Month DD, YYYY
+               trimmed.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}") ||           // ISO datetime
+               trimmed.matches("\\d{1,2}/\\d{1,2}/\\d{2,4}\\s+\\d{1,2}:\\d{2}"); // Date with time
+    }
+
     private String standardizeDateFormat(String dateStr) {
         if (dateStr == null || dateStr.trim().isEmpty()) {
             return dateStr;
@@ -210,27 +289,138 @@ public class CleanService {
         
         String trimmed = dateStr.trim();
         
-        // Common date patterns to standardize
-        // MM/DD/YYYY or MM-DD-YYYY -> YYYY-MM-DD
-        if (trimmed.matches("\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}")) {
-            String[] parts = trimmed.split("[/-]");
-            return String.format("%s-%02d-%02d", parts[2], Integer.parseInt(parts[0]), Integer.parseInt(parts[1]));
+        try {
+            // Try multiple date patterns using DateTimeFormatter
+            List<DateTimeFormatter> formatters = Arrays.asList(
+                // Standard formats
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("yyyy/MM/dd"),
+                DateTimeFormatter.ofPattern("yyyy.MM.dd"),
+                
+                // US formats (MM/DD/YYYY)
+                DateTimeFormatter.ofPattern("MM/dd/yyyy"),
+                DateTimeFormatter.ofPattern("MM-dd-yyyy"),
+                DateTimeFormatter.ofPattern("MM.dd.yyyy"),
+                DateTimeFormatter.ofPattern("M/d/yyyy"),
+                DateTimeFormatter.ofPattern("M-d-yyyy"),
+                
+                // European formats (DD/MM/YYYY)
+                DateTimeFormatter.ofPattern("dd/MM/yyyy"),
+                DateTimeFormatter.ofPattern("dd-MM-yyyy"),
+                DateTimeFormatter.ofPattern("dd.MM.yyyy"),
+                DateTimeFormatter.ofPattern("d/M/yyyy"),
+                DateTimeFormatter.ofPattern("d-M-yyyy"),
+                
+                // Short year formats
+                DateTimeFormatter.ofPattern("MM/dd/yy"),
+                DateTimeFormatter.ofPattern("dd/MM/yy"),
+                DateTimeFormatter.ofPattern("yy/MM/dd"),
+                DateTimeFormatter.ofPattern("MM-dd-yy"),
+                DateTimeFormatter.ofPattern("dd-MM-yy"),
+                DateTimeFormatter.ofPattern("yy-MM-dd"),
+                
+                // Text month formats
+                DateTimeFormatter.ofPattern("MMM dd, yyyy"),
+                DateTimeFormatter.ofPattern("MMMM dd, yyyy"),
+                DateTimeFormatter.ofPattern("dd MMM yyyy"),
+                DateTimeFormatter.ofPattern("dd MMMM yyyy"),
+                DateTimeFormatter.ofPattern("MMM dd yyyy"),
+                DateTimeFormatter.ofPattern("MMMM dd yyyy"),
+                
+                // ISO formats
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+            );
+            
+            // Try each formatter
+            for (DateTimeFormatter formatter : formatters) {
+                try {
+                    LocalDate date = LocalDate.parse(trimmed, formatter);
+                    return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                } catch (DateTimeParseException e) {
+                    // Continue to next formatter
+                }
+            }
+            
+            // If standard formatters fail, try regex-based parsing for edge cases
+            return parseWithRegex(trimmed);
+            
+        } catch (Exception e) {
+            System.out.println("Could not parse date: " + trimmed + " - " + e.getMessage());
+            return dateStr; // Return original if parsing fails
+        }
+    }
+    
+    private String parseWithRegex(String dateStr) {
+        // Handle various formats with regex
+        String trimmed = dateStr.trim();
+        
+        // MM/DD/YYYY or MM-DD-YYYY variants
+        Pattern mmddyyyy = Pattern.compile("(\\d{1,2})[/-](\\d{1,2})[/-](\\d{4})");
+        Matcher matcher = mmddyyyy.matcher(trimmed);
+        if (matcher.matches()) {
+            int month = Integer.parseInt(matcher.group(1));
+            int day = Integer.parseInt(matcher.group(2));
+            int year = Integer.parseInt(matcher.group(3));
+            
+            if (isValidDate(year, month, day)) {
+                return String.format("%04d-%02d-%02d", year, month, day);
+            }
         }
         
-        // DD/MM/YYYY or DD-MM-YYYY -> YYYY-MM-DD (European format)
-        if (trimmed.matches("\\d{1,2}[/-]\\d{1,2}[/-]\\d{4}") && trimmed.contains(".")) {
-            String[] parts = trimmed.split("[/.-]");
-            return String.format("%s-%02d-%02d", parts[2], Integer.parseInt(parts[1]), Integer.parseInt(parts[0]));
+        // DD/MM/YYYY European format (when day > 12, we know it's DD/MM)
+        Pattern ddmmyyyy = Pattern.compile("(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})");
+        matcher = ddmmyyyy.matcher(trimmed);
+        if (matcher.matches()) {
+            int first = Integer.parseInt(matcher.group(1));
+            int second = Integer.parseInt(matcher.group(2));
+            int year = Integer.parseInt(matcher.group(3));
+            
+            // If first number > 12, it must be day (European format)
+            if (first > 12 && isValidDate(year, second, first)) {
+                return String.format("%04d-%02d-%02d", year, second, first);
+            }
         }
         
-        // YYYY/MM/DD or YYYY-MM-DD -> keep as YYYY-MM-DD
-        if (trimmed.matches("\\d{4}[/-]\\d{1,2}[/-]\\d{1,2}")) {
-            String[] parts = trimmed.split("[/-]");
-            return String.format("%s-%02d-%02d", parts[0], Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+        // YYYY/MM/DD variants
+        Pattern yyyymmdd = Pattern.compile("(\\d{4})[/-](\\d{1,2})[/-](\\d{1,2})");
+        matcher = yyyymmdd.matcher(trimmed);
+        if (matcher.matches()) {
+            int year = Integer.parseInt(matcher.group(1));
+            int month = Integer.parseInt(matcher.group(2));
+            int day = Integer.parseInt(matcher.group(3));
+            
+            if (isValidDate(year, month, day)) {
+                return String.format("%04d-%02d-%02d", year, month, day);
+            }
         }
         
-        // If no pattern matches, return original
-        return dateStr;
+        // Handle 2-digit years (assume 20xx for years 00-30, 19xx for 31-99)
+        Pattern mmddyy = Pattern.compile("(\\d{1,2})[/-](\\d{1,2})[/-](\\d{2})");
+        matcher = mmddyy.matcher(trimmed);
+        if (matcher.matches()) {
+            int month = Integer.parseInt(matcher.group(1));
+            int day = Integer.parseInt(matcher.group(2));
+            int shortYear = Integer.parseInt(matcher.group(3));
+            int year = shortYear <= 30 ? 2000 + shortYear : 1900 + shortYear;
+            
+            if (isValidDate(year, month, day)) {
+                return String.format("%04d-%02d-%02d", year, month, day);
+            }
+        }
+        
+        return dateStr; // Return original if no pattern matches
+    }
+    
+    private boolean isValidDate(int year, int month, int day) {
+        try {
+            LocalDate.of(year, month, day);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
 

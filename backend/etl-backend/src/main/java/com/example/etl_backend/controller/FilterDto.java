@@ -17,4 +17,10 @@ public class FilterDto {
 
     public String getValue() { return value; }
     public void setValue(String value) { this.value = value; }
+
+    @Override
+    public String toString() {
+        return String.format("FilterDto{column='%s', operator='%s', value='%s'}", 
+                            column, operator, value);
+    }
 }

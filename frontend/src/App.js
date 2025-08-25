@@ -71,6 +71,10 @@ export default function App() {
       <div className="bg-gray-700 min-h-screen py-8 px-4">
         <div className="flex flex-col gap-6 bg-gray-500 p-6 rounded shadow-lg max-w-6xl mx-auto">
           <ProcessedDataTable processedData={newCSV} />
+          <DownloadCSV 
+            data={newCSV} 
+            filename={`processed_data_${new Date().toISOString().split('T')[0]}.csv`}
+          />
         </div>
       </div>
     );

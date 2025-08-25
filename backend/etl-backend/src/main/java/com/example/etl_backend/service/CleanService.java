@@ -152,12 +152,24 @@ public class CleanService {
 
     private List<Map<String, Object>> removeSpecialCharacters(List<Map<String, Object>> data) {
         System.out.println("Applying: Remove special characters");
+        
+        // First, identify which columns likely contain dates
+        Set<String> dateColumns = identifyDateColumns(data);
+        System.out.println("Preserving date separators in columns: " + dateColumns);
+        
         return data.stream()
                 .map(row -> {
                     Map<String, Object> cleanedRow = new LinkedHashMap<>();
                     row.forEach((key, value) -> {
                         if (value instanceof String && !isPlaceholderValue(value)) {
-                            String cleaned = ((String) value).replaceAll("[^a-zA-Z0-9\\s.,'-]", "").trim();
+                            String cleaned;
+                            if (dateColumns.contains(key)) {
+                                // For date columns, preserve / and - separators
+                                cleaned = ((String) value).replaceAll("[^a-zA-Z0-9\\s.,'/:-]", "").trim();
+                            } else {
+                                // For non-date columns, remove all special characters including / and -
+                                cleaned = ((String) value).replaceAll("[^a-zA-Z0-9\\s.,'-]", "").trim();
+                            }
                             cleanedRow.put(key, cleaned);
                         } else {
                             cleanedRow.put(key, value); // Preserve placeholder values

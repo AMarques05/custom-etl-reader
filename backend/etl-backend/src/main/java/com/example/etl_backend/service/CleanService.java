@@ -51,9 +51,6 @@ public class CleanService {
                 case "trim_whitespace":
                     cleanData = trimWhitespace(cleanData);
                     break;
-                case "remove_duplicates":
-                    cleanData = removeDuplicates(cleanData);
-                    break;
                 case "standardize_case":
                     cleanData = standardizeCase(cleanData);
                     break;
@@ -106,29 +103,6 @@ public class CleanService {
                         }
                     });
                     return cleanedRow;
-                })
-                .collect(Collectors.toList());
-    }
-
-    private List<Map<String, Object>> removeDuplicates(List<Map<String, Object>> data) {
-        System.out.println("Applying: Remove duplicates");
-        Set<String> seen = new HashSet<>();
-        return data.stream()
-                .filter(row -> {
-                    String rowSignature = row.entrySet().stream()
-                            .map(entry -> {
-                                if (isPlaceholderValue(entry.getValue())) {
-                                    return entry.getKey() + ":" + entry.getValue().toString(); // Keep placeholder as-is
-                                } else {
-                                    String normalizedValue = entry.getValue() != null ? 
-                                            entry.getValue().toString().trim().toLowerCase() : "";
-                                    return entry.getKey() + ":" + normalizedValue;
-                                }
-                            })
-                            .sorted()
-                            .collect(Collectors.joining("|"));
-                    
-                    return seen.add(rowSignature);
                 })
                 .collect(Collectors.toList());
     }

@@ -51,6 +51,9 @@ public class CleanService {
                 case "trim_whitespace":
                     cleanData = trimWhitespace(cleanData);
                     break;
+                case "remove_duplicates":
+                    cleanData = removeDuplicates(cleanData);
+                    break;
                 case "standardize_case":
                     cleanData = standardizeCase(cleanData);
                     break;
@@ -105,6 +108,77 @@ public class CleanService {
                     return cleanedRow;
                 })
                 .collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> removeDuplicates(List<Map<String, Object>> data) {
+        System.out.println("Applying: Remove duplicates");
+        System.out.println("Input data size: " + data.size());
+        
+        // First, identify date columns for normalization
+        Set<String> dateColumns = identifyDateColumns(data);
+        System.out.println("Date columns for normalization: " + dateColumns);
+        
+        Set<String> seen = new HashSet<>();
+        List<Map<String, Object>> result = data.stream()
+                .filter(row -> {
+                    // Create a normalized signature for comparison
+                    String rowSignature = row.entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey()) // Sort by key for consistent ordering
+                            .map(entry -> {
+                                String key = entry.getKey();
+                                Object value = entry.getValue();
+                                
+                                if (isPlaceholderValue(value)) {
+                                    return key + ":" + value.toString();
+                                } else if (value == null) {
+                                    return key + ":null";
+                                } else {
+                                    String stringValue = value.toString().trim();
+                                    
+                                    // If this is a date column, try to normalize the date format
+                                    if (dateColumns.contains(key) && !stringValue.isEmpty()) {
+                                        String normalizedDate = tryNormalizeDateForComparison(stringValue);
+                                        return key + ":" + normalizedDate.toLowerCase();
+                                    } else {
+                                        // For non-date values, just normalize case and whitespace
+                                        return key + ":" + stringValue.toLowerCase();
+                                    }
+                                }
+                            })
+                            .collect(Collectors.joining("|"));
+                    
+                    boolean isUnique = seen.add(rowSignature);
+                    
+                    if (!isUnique) {
+                        System.out.println("Duplicate found and removed: " + rowSignature);
+                    }
+                    
+                    return isUnique;
+                })
+                .collect(Collectors.toList());
+        
+        System.out.println("Output data size: " + result.size());
+        System.out.println("Removed " + (data.size() - result.size()) + " duplicate rows");
+        
+        return result;
+    }
+
+    private String tryNormalizeDateForComparison(String dateStr) {
+        try {
+            // Try to parse and normalize the date to YYYY-MM-DD format for comparison
+            String normalized = standardizeDateFormat(dateStr);
+            
+            // If standardization worked (date was successfully parsed), use the normalized version
+            if (!normalized.equals(dateStr)) {
+                return normalized;
+            }
+            
+            // If it looks like a date but couldn't be standardized, return as-is
+            return dateStr;
+        } catch (Exception e) {
+            // If any error occurs, just return the original string
+            return dateStr;
+        }
     }
 
     private List<Map<String, Object>> standardizeCase(List<Map<String, Object>> data) {
